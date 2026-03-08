@@ -41,7 +41,7 @@ export default function TastingDetail({ card, onBack, onLike, isOwn = true }: Ta
   };
 
   return (
-    <div className="min-h-screen parchment-bg pb-10">
+    <div className="min-h-screen parchment-bg pb-10" style={{ paddingTop: "56px" }}>
       {/* Hero */}
       <div className="relative">
         {card.photo ? (
@@ -58,7 +58,7 @@ export default function TastingDetail({ card, onBack, onLike, isOwn = true }: Ta
         )}
         
         {/* Overlay controls */}
-        <div className="absolute top-12 left-4 right-4 flex items-center justify-between z-10">
+        <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
           <button onClick={onBack}
             className="w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm"
             style={{ backgroundColor: "rgba(0,0,0,0.3)" }}>

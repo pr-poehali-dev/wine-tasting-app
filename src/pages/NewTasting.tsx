@@ -11,6 +11,9 @@ const WINE_STYLES = ["Красное", "Белое", "Розовое", "Игри
 const COUNTRIES = ["Франция", "Италия", "Испания", "Австралия", "Аргентина", "Грузия", "Россия", "США", "Германия", "Португалия", "Другая"];
 const DENSITIES = ["Лёгкое", "Среднее", "Полнотелое"];
 
+const inputCls = "w-full h-10 px-3.5 bg-muted border border-border rounded-xl font-body text-sm transition-colors";
+const labelCls = "font-body text-xs font-medium tracking-wide text-muted-foreground uppercase mb-1.5 block";
+
 export default function NewTasting({ onSave, onBack }: NewTastingProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState("");
@@ -43,33 +46,16 @@ export default function NewTasting({ onSave, onBack }: NewTastingProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) { alert("Введите название вина"); return; }
     if (!rating) { alert("Поставьте общую оценку"); return; }
     onSave({ photo, name, year, country, region, producer, style, impression, date, aromaIntensity, primaryAromas, secondaryAromas, flavor, finish, color, density, rating, notes });
   };
 
-  const InputField = ({ label, value, onChange, placeholder, type = "text", required = false }: {
-    label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string; required?: boolean;
-  }) => (
-    <div>
-      <label className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase mb-1.5 block">
-        {label} {required && <span style={{ color: "hsl(345,55%,28%)" }}>*</span>}
-      </label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        required={required}
-        className="w-full h-10 px-3.5 bg-muted border border-border rounded-xl font-body text-sm transition-colors"
-      />
-    </div>
-  );
-
   return (
-    <div className="min-h-screen parchment-bg pb-10">
+    <div className="min-h-screen parchment-bg pb-10" style={{ paddingTop: "60px" }}>
       {/* Header */}
-      <div className="wine-gradient pt-12 pb-8 px-6 relative overflow-hidden sticky top-0 z-20">
-        <div className="flex items-center gap-4 relative z-10">
+      <div className="wine-gradient pb-6 px-6 relative overflow-hidden">
+        <div className="flex items-center gap-4 relative z-10 pt-4">
           <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
             style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
             <Icon name="ArrowLeft" size={18} style={{ color: "hsl(36,60%,94%)" }} />
@@ -105,13 +91,13 @@ export default function NewTasting({ onSave, onBack }: NewTastingProps) {
             <div className="flex flex-col gap-2">
               <button type="button"
                 onClick={() => { if (fileRef.current) { fileRef.current.setAttribute("capture","environment"); fileRef.current.click(); } }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl font-body text-xs font-medium transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-body text-xs font-medium"
                 style={{ border: "1px solid hsl(345,55%,28%)", color: "hsl(345,55%,28%)", backgroundColor: "white" }}>
                 <Icon name="Camera" size={13} /> Камера
               </button>
               <button type="button"
                 onClick={() => { if (fileRef.current) { fileRef.current.removeAttribute("capture"); fileRef.current.click(); } }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl font-body text-xs font-medium transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-body text-xs font-medium"
                 style={{ border: "1px solid hsl(345,55%,28%)", color: "hsl(345,55%,28%)", backgroundColor: "white" }}>
                 <Icon name="Image" size={13} /> Галерея
               </button>
@@ -126,11 +112,19 @@ export default function NewTasting({ onSave, onBack }: NewTastingProps) {
             <div className="w-1 h-4 rounded-full" style={{ backgroundColor: "hsl(42,75%,50%)" }} />
             <p className="font-display text-base font-semibold" style={{ color: "hsl(345,65%,18%)" }}>Основная информация</p>
           </div>
-          <InputField label="Название вина" value={name} onChange={setName} placeholder="Château Margaux" required />
+
+          <div>
+            <label className={labelCls}>Название вина <span style={{ color: "hsl(345,55%,28%)" }}>*</span></label>
+            <input className={inputCls} type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Château Margaux" />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
-            <InputField label="Год урожая" value={year} onChange={setYear} placeholder="2020" />
             <div>
-              <label className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase mb-1.5 block">Страна</label>
+              <label className={labelCls}>Год урожая</label>
+              <input className={inputCls} type="text" inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value)} placeholder="2020" />
+            </div>
+            <div>
+              <label className={labelCls}>Страна</label>
               <select value={country} onChange={(e) => setCountry(e.target.value)}
                 className="w-full h-10 px-3 bg-muted border border-border rounded-xl font-body text-sm">
                 <option value="">Выберите</option>
@@ -138,13 +132,19 @@ export default function NewTasting({ onSave, onBack }: NewTastingProps) {
               </select>
             </div>
           </div>
-          <InputField label="Регион" value={region} onChange={setRegion} placeholder="Бордо, Тоскана..." />
-          <InputField label="Производитель" value={producer} onChange={setProducer} placeholder="Название хозяйства" />
-          
+
           <div>
-            <label className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase mb-2 block">
-              Стиль вина
-            </label>
+            <label className={labelCls}>Регион</label>
+            <input className={inputCls} type="text" value={region} onChange={(e) => setRegion(e.target.value)} placeholder="Бордо, Тоскана..." />
+          </div>
+
+          <div>
+            <label className={labelCls}>Производитель</label>
+            <input className={inputCls} type="text" value={producer} onChange={(e) => setProducer(e.target.value)} placeholder="Название хозяйства" />
+          </div>
+
+          <div>
+            <label className={labelCls}>Стиль вина</label>
             <div className="flex flex-wrap gap-2">
               {WINE_STYLES.map(s => (
                 <button key={s} type="button" onClick={() => setStyle(s)}
@@ -160,11 +160,9 @@ export default function NewTasting({ onSave, onBack }: NewTastingProps) {
           </div>
 
           <div>
-            <label className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase mb-1.5 block">
-              Дата дегустации
-            </label>
+            <label className={labelCls}>Дата дегустации</label>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              className="w-full h-10 px-3.5 bg-muted border border-border rounded-xl font-body text-sm" />
+              className={inputCls} />
           </div>
         </div>
 
@@ -174,13 +172,14 @@ export default function NewTasting({ onSave, onBack }: NewTastingProps) {
             <div className="w-1 h-4 rounded-full" style={{ backgroundColor: "hsl(42,75%,50%)" }} />
             <p className="font-display text-base font-semibold" style={{ color: "hsl(345,65%,18%)" }}>Сенсорный анализ</p>
           </div>
-          
-          <InputField label="Цвет" value={color} onChange={setColor} placeholder="Рубиново-красный, янтарный..." />
-          
+
           <div>
-            <label className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase mb-2 block">
-              Плотность
-            </label>
+            <label className={labelCls}>Цвет</label>
+            <input className={inputCls} type="text" value={color} onChange={(e) => setColor(e.target.value)} placeholder="Рубиново-красный, янтарный..." />
+          </div>
+
+          <div>
+            <label className={labelCls}>Плотность</label>
             <div className="flex gap-2">
               {DENSITIES.map(d => (
                 <button key={d} type="button" onClick={() => setDensity(d)}
@@ -197,9 +196,7 @@ export default function NewTasting({ onSave, onBack }: NewTastingProps) {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Интенсивность аромата
-              </label>
+              <label className={labelCls}>Интенсивность аромата</label>
               <span className="font-display text-sm font-semibold" style={{ color: "hsl(345,55%,28%)" }}>
                 {["", "Низкая", "Умеренная", "Средняя", "Высокая", "Интенсивная"][aromaIntensity]}
               </span>
@@ -213,15 +210,28 @@ export default function NewTasting({ onSave, onBack }: NewTastingProps) {
             </div>
           </div>
 
-          <InputField label="Первичные ароматы" value={primaryAromas} onChange={setPrimaryAromas} placeholder="Фруктовые, цветочные..." />
-          <InputField label="Вторичные и третичные ароматы" value={secondaryAromas} onChange={setSecondaryAromas} placeholder="Дубовые, пряные, земляные..." />
-          <InputField label="Вкус" value={flavor} onChange={setFlavor} placeholder="Кислотность, танины, баланс..." />
-          <InputField label="Послевкусие" value={finish} onChange={setFinish} placeholder="Длина, нюансы..." />
-          
           <div>
-            <label className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase mb-2 block">
-              Общее впечатление
-            </label>
+            <label className={labelCls}>Первичные ароматы</label>
+            <input className={inputCls} type="text" value={primaryAromas} onChange={(e) => setPrimaryAromas(e.target.value)} placeholder="Фруктовые, цветочные..." />
+          </div>
+
+          <div>
+            <label className={labelCls}>Вторичные и третичные ароматы</label>
+            <input className={inputCls} type="text" value={secondaryAromas} onChange={(e) => setSecondaryAromas(e.target.value)} placeholder="Дубовые, пряные, земляные..." />
+          </div>
+
+          <div>
+            <label className={labelCls}>Вкус</label>
+            <input className={inputCls} type="text" value={flavor} onChange={(e) => setFlavor(e.target.value)} placeholder="Кислотность, танины, баланс..." />
+          </div>
+
+          <div>
+            <label className={labelCls}>Послевкусие</label>
+            <input className={inputCls} type="text" value={finish} onChange={(e) => setFinish(e.target.value)} placeholder="Длина, нюансы..." />
+          </div>
+
+          <div>
+            <label className={labelCls}>Общее впечатление</label>
             <textarea value={impression} onChange={(e) => setImpression(e.target.value)}
               placeholder="Описание вина, впечатления, особенности..."
               rows={3}
@@ -238,9 +248,7 @@ export default function NewTasting({ onSave, onBack }: NewTastingProps) {
           <div className="flex items-center justify-center gap-4 mb-2">
             <div className="flex gap-3 star-rating">
               {[1,2,3,4,5].map(n => (
-                <button
-                  key={n}
-                  type="button"
+                <button key={n} type="button"
                   className="star text-4xl transition-all duration-150"
                   style={{ color: n <= (hoveredRating || rating) ? "hsl(42,75%,50%)" : "hsl(36,20%,80%)" }}
                   onClick={() => setRating(n)}
@@ -261,16 +269,13 @@ export default function NewTasting({ onSave, onBack }: NewTastingProps) {
 
         {/* Notes */}
         <div className="card-wine rounded-2xl p-5">
-          <label className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase mb-2 block">
-            Примечания
-          </label>
+          <label className={labelCls}>Примечания</label>
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
             placeholder="Любые дополнительные заметки, сочетания с едой, цена..."
             rows={3}
             className="w-full px-3.5 py-3 bg-muted border border-border rounded-xl font-body text-sm resize-none" />
         </div>
 
-        {/* Submit */}
         <button
           type="submit"
           className="w-full h-12 rounded-xl font-body font-semibold text-sm tracking-wide transition-all duration-200 hover:opacity-90 shadow-md"

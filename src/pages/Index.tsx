@@ -144,12 +144,14 @@ export default function Index() {
       });
       const newCard: TastingCard = { ...card, id: res.id, likes: 0 };
       setMyTastings(prev => [newCard, ...prev]);
-    } catch {
+    } catch (err) {
+      console.error("Ошибка сохранения дегустации:", err);
       const newCard: TastingCard = { ...card, id: Date.now().toString(), likes: 0 };
       setMyTastings(prev => [newCard, ...prev]);
     }
     setScreen("main");
     setTab("tastings");
+    loadTastings();
   };
 
   const handleLike = async (id: string) => {

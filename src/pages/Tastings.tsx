@@ -29,9 +29,9 @@ export default function Tastings({ tastings, onNew, onView, userProfile }: Tasti
     : "—";
 
   return (
-    <div className="min-h-screen parchment-bg pb-24">
+    <div className="min-h-screen parchment-bg pb-6" style={{ paddingTop: "56px" }}>
       {/* Header */}
-      <div className="wine-gradient pt-12 pb-20 px-6 relative overflow-hidden">
+      <div className="wine-gradient pt-5 pb-20 px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10"
           style={{ background: "radial-gradient(circle, white 0%, transparent 70%)", transform: "translate(30%, -30%)" }} />
         <div className="flex items-center justify-between relative z-10 animate-slide-up">

@@ -24,8 +24,8 @@ export default function Notifications({ notifications, onMarkRead }: Notificatio
   const unread = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="min-h-screen parchment-bg pb-24">
-      <div className="wine-gradient pt-12 pb-8 px-6 relative overflow-hidden">
+    <div className="min-h-screen parchment-bg pb-6" style={{ paddingTop: "56px" }}>
+      <div className="wine-gradient pt-5 pb-8 px-6 relative overflow-hidden">
         <div className="flex items-center justify-between relative z-10 animate-slide-up">
           <div>
             <p className="font-body text-xs tracking-[0.2em] uppercase mb-0.5" style={{ color: "hsl(42,90%,70%)" }}>

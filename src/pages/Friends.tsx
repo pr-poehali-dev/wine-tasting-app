@@ -34,9 +34,9 @@ export default function Friends({ friends, onAddFriend, onViewProfile, onRemoveF
   };
 
   return (
-    <div className="min-h-screen parchment-bg pb-24">
+    <div className="min-h-screen parchment-bg pb-6" style={{ paddingTop: "56px" }}>
       {/* Header */}
-      <div className="wine-gradient pt-12 pb-8 px-6 relative overflow-hidden">
+      <div className="wine-gradient pt-5 pb-8 px-6 relative overflow-hidden">
         <div className="relative z-10 animate-slide-up">
           <p className="font-body text-xs tracking-[0.2em] uppercase mb-0.5" style={{ color: "hsl(42,90%,70%)" }}>
             Сообщество
