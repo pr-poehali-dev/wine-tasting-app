@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Auth from "./Auth";
 import Profile from "./Profile";
 import Tastings from "./Tastings";
@@ -9,156 +9,185 @@ import PublicProfile from "./PublicProfile";
 import Notifications from "./Notifications";
 import BottomNav from "@/components/BottomNav";
 import { TastingCard, UserProfile, Friend } from "@/types";
+import { auth, tastings as tastingsApi, friendsApi, TastingApiRow, FriendApiRow } from "@/lib/api";
 
-type Screen =
-  | "auth"
-  | "setup-profile"
-  | "main"
-  | "new-tasting"
-  | "tasting-detail"
-  | "public-profile";
-
+type Screen = "auth" | "setup-profile" | "main" | "new-tasting" | "tasting-detail" | "public-profile";
 type Tab = "tastings" | "friends" | "notifications" | "profile";
 
-const DEMO_TASTINGS: TastingCard[] = [
-  {
-    id: "1",
-    name: "Barolo Cannubi",
-    year: "2018",
-    country: "Италия",
-    region: "Пьемонт",
-    producer: "Marchesi di Barolo",
-    style: "Красное",
-    impression: "Величественное, многослойное вино с характером и душой",
-    date: "2024-01-15",
-    color: "Рубиново-гранатовый с терракотовым ободом",
-    density: "Полнотелое",
-    aromaIntensity: 5,
-    primaryAromas: "Вишня, слива, шиповник",
-    secondaryAromas: "Кожа, табак, деготь, розы",
-    flavor: "Мощные танины, высокая кислотность, долгое послевкусие",
-    finish: "Очень длинное, с нотами специй и сухих роз",
-    rating: 5,
-    notes: "Открыть через 5 лет. Подавать с выдержанными сырами",
-    likes: 12,
-  },
-  {
-    id: "2",
-    name: "Chablis Premier Cru",
-    year: "2021",
-    country: "Франция",
-    region: "Бургундия",
-    producer: "William Fèvre",
-    style: "Белое",
-    impression: "Минеральное и свежее, как морской бриз",
-    date: "2024-02-10",
-    color: "Светло-соломенный с зелёным отливом",
-    density: "Лёгкое",
-    aromaIntensity: 3,
-    primaryAromas: "Зелёное яблоко, лимон, белый цветок",
-    secondaryAromas: "Кремень, устрица, белый перец",
-    flavor: "Высокая кислотность, прохладная минеральность",
-    finish: "Среднее, йодистое",
-    rating: 4,
-    likes: 7,
-  },
-];
+function apiToTasting(row: TastingApiRow): TastingCard {
+  return {
+    id: row.id,
+    name: row.name,
+    year: row.year,
+    country: row.country,
+    region: row.region,
+    producer: row.producer,
+    style: row.style,
+    impression: row.impression,
+    date: row.date,
+    photo: row.photo,
+    color: row.color,
+    density: row.density,
+    aromaIntensity: row.aromaIntensity,
+    primaryAromas: row.primaryAromas,
+    secondaryAromas: row.secondaryAromas,
+    flavor: row.flavor,
+    finish: row.finish,
+    rating: row.rating,
+    notes: row.notes,
+    likes: row.likes,
+  };
+}
 
-const DEMO_FRIENDS: Friend[] = [
-  {
-    id: "f1",
-    nickname: "sommelier_pro",
-    avatar: "",
-    bio: "Сомелье с 10-летним опытом. Люблю Бургундию и натуральные вина.",
-    tastingsCount: 87,
-    avgRating: 4.2,
-    tastings: [
-      {
-        id: "f1t1",
-        name: "Gevrey-Chambertin",
-        year: "2019",
-        country: "Франция",
-        region: "Бургундия",
-        style: "Красное",
-        date: "2024-01-20",
-        rating: 5,
-        likes: 23,
-        color: "Бледно-рубиновый",
-        density: "Среднее",
-        aromaIntensity: 4,
-        primaryAromas: "Малина, вишня, фиалка",
-        impression: "Элегантность в чистом виде",
-      }
-    ],
-  },
-];
+function apiToFriend(row: FriendApiRow): Friend {
+  return {
+    id: row.id,
+    nickname: row.nickname,
+    bio: row.bio,
+    avatar: row.avatar,
+    tastingsCount: row.tastingsCount,
+    avgRating: row.avgRating,
+    tastings: row.tastings.map(apiToTasting),
+  };
+}
 
 const DEMO_NOTIFICATIONS = [
-  { id: "n1", type: "like" as const, from: "sommelier_pro", target: "Barolo Cannubi", time: "5 минут назад", read: false },
-  { id: "n2", type: "friend" as const, from: "wine_lover_kz", time: "1 час назад", read: false },
-  { id: "n3", type: "like" as const, from: "bordeaux_fan", target: "Chablis Premier Cru", time: "2 дня назад", read: true },
+  { id: "n1", type: "like" as const, from: "sommelier_pro", target: "первая дегустация", time: "Добро пожаловать!", read: false },
 ];
 
 export default function Index() {
-  const [screen, setScreen] = useState<Screen>("auth");
+  const [screen, setScreen] = useState<Screen>(() =>
+    auth.isLoggedIn() ? "main" : "auth"
+  );
   const [tab, setTab] = useState<Tab>("tastings");
-  const [profile, setProfile] = useState<UserProfile>({ nickname: "", bio: "", avatar: "" });
-  const [tastings, setTastings] = useState<TastingCard[]>(DEMO_TASTINGS);
-  const [friends, setFriends] = useState<Friend[]>(DEMO_FRIENDS);
-  const [notifications, setNotifications] = useState(DEMO_NOTIFICATIONS);
+  const [profile, setProfile] = useState<UserProfile>({ nickname: auth.getNickname() || "", bio: "", avatar: "" });
+  const [myTastings, setMyTastings] = useState<TastingCard[]>([]);
+  const [myFriends, setMyFriends] = useState<Friend[]>([]);
+  const [notifications] = useState(DEMO_NOTIFICATIONS);
   const [selectedTasting, setSelectedTasting] = useState<TastingCard | null>(null);
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleAuth = () => setScreen("setup-profile");
+  const loadTastings = useCallback(async () => {
+    try {
+      const rows = await tastingsApi.list();
+      setMyTastings(rows.map(apiToTasting));
+    } catch { /* silent */ }
+  }, []);
 
-  const handleProfileSave = (p: UserProfile) => {
-    setProfile(p);
-    setScreen("main");
+  const loadFriends = useCallback(async () => {
+    try {
+      const rows = await friendsApi.list();
+      setMyFriends(rows.map(apiToFriend));
+    } catch { /* silent */ }
+  }, []);
+
+  const loadProfile = useCallback(async () => {
+    try {
+      const me = await auth.me();
+      setProfile({ nickname: me.nickname, bio: me.bio, avatar: me.avatar });
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    if (screen === "main") {
+      loadTastings();
+      loadFriends();
+      loadProfile();
+    }
+  }, [screen, loadTastings, loadFriends, loadProfile]);
+
+  const handleAuth = async (sessionData?: { nickname: string; bio: string; avatar: string }) => {
+    if (sessionData) {
+      setProfile({ nickname: sessionData.nickname, bio: sessionData.bio || "", avatar: sessionData.avatar || "" });
+      setScreen("main");
+    } else {
+      setScreen("setup-profile");
+    }
   };
 
-  const handleNewTasting = (card: Omit<TastingCard, "id" | "likes">) => {
-    const newCard: TastingCard = { ...card, id: Date.now().toString(), likes: 0 };
-    setTastings(prev => [newCard, ...prev]);
+  const handleProfileSave = async (p: UserProfile) => {
+    setLoading(true);
+    try {
+      await auth.updateProfile(p.nickname, p.bio, p.avatar);
+      setProfile(p);
+      setScreen("main");
+    } catch (e) {
+      setProfile(p);
+      setScreen("main");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNewTasting = async (card: Omit<TastingCard, "id" | "likes">) => {
+    try {
+      const res = await tastingsApi.create({
+        name: card.name,
+        year: card.year,
+        country: card.country,
+        region: card.region,
+        producer: card.producer,
+        style: card.style,
+        impression: card.impression,
+        date: card.date,
+        photo: card.photo,
+        color: card.color,
+        density: card.density,
+        aromaIntensity: card.aromaIntensity,
+        primaryAromas: card.primaryAromas,
+        secondaryAromas: card.secondaryAromas,
+        flavor: card.flavor,
+        finish: card.finish,
+        rating: card.rating,
+        notes: card.notes,
+      });
+      const newCard: TastingCard = { ...card, id: res.id, likes: 0 };
+      setMyTastings(prev => [newCard, ...prev]);
+    } catch {
+      const newCard: TastingCard = { ...card, id: Date.now().toString(), likes: 0 };
+      setMyTastings(prev => [newCard, ...prev]);
+    }
     setScreen("main");
     setTab("tastings");
   };
 
-  const handleLike = (id: string) => {
-    setTastings(prev => prev.map(t => t.id === id ? { ...t, likes: t.likes + 1 } : t));
-    if (selectedFriend) {
-      setFriends(prev => prev.map(f =>
-        f.id === selectedFriend.id
-          ? { ...f, tastings: f.tastings.map(t => t.id === id ? { ...t, likes: t.likes + 1 } : t) }
-          : f
-      ));
+  const handleLike = async (id: string) => {
+    try {
+      const res = await tastingsApi.like(id);
+      setMyTastings(prev => prev.map(t => t.id === id ? { ...t, likes: res.likes } : t));
+      if (selectedFriend) {
+        setMyFriends(prev => prev.map(f =>
+          f.id === selectedFriend.id
+            ? { ...f, tastings: f.tastings.map(t => t.id === id ? { ...t, likes: res.likes } : t) }
+            : f
+        ));
+      }
+    } catch {
+      setMyTastings(prev => prev.map(t => t.id === id ? { ...t, likes: t.likes + 1 } : t));
     }
   };
 
-  const handleAddFriend = (nickname: string) => {
-    const newFriend: Friend = {
-      id: Date.now().toString(),
-      nickname,
-      avatar: "",
-      bio: "Ценитель хорошего вина",
-      tastingsCount: 0,
-      avgRating: 0,
-      tastings: [],
-    };
-    setFriends(prev => [...prev, newFriend]);
+  const handleAddFriend = async (friendId: string) => {
+    try {
+      await friendsApi.add(friendId);
+      await loadFriends();
+    } catch { /* silent */ }
   };
 
-  const handleRemoveFriend = (id: string) => {
-    setFriends(prev => prev.filter(f => f.id !== id));
-  };
-
-  const handleMarkRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const handleRemoveFriend = async (id: string) => {
+    try {
+      await friendsApi.remove(id);
+      setMyFriends(prev => prev.filter(f => f.id !== id));
+    } catch {
+      setMyFriends(prev => prev.filter(f => f.id !== id));
+    }
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   if (screen === "auth") return <Auth onAuth={handleAuth} />;
-  if (screen === "setup-profile") return <Profile onSave={handleProfileSave} />;
+  if (screen === "setup-profile") return <Profile onSave={handleProfileSave} loading={loading} />;
 
   if (screen === "new-tasting") return (
     <NewTasting onSave={handleNewTasting} onBack={() => setScreen("main")} />
@@ -189,10 +218,10 @@ export default function Index() {
     <div className="relative">
       {tab === "tastings" && (
         <Tastings
-          tastings={tastings}
+          tastings={myTastings}
           onNew={() => setScreen("new-tasting")}
           onView={(id) => {
-            const t = tastings.find(t => t.id === id);
+            const t = myTastings.find(t => t.id === id);
             if (t) { setSelectedTasting(t); setScreen("tasting-detail"); }
           }}
           userProfile={profile}
@@ -201,7 +230,7 @@ export default function Index() {
 
       {tab === "friends" && (
         <Friends
-          friends={friends}
+          friends={myFriends}
           onAddFriend={handleAddFriend}
           onViewProfile={(f) => { setSelectedFriend(f); setScreen("public-profile"); }}
           onRemoveFriend={handleRemoveFriend}
@@ -209,14 +238,15 @@ export default function Index() {
       )}
 
       {tab === "notifications" && (
-        <Notifications notifications={notifications} onMarkRead={handleMarkRead} />
+        <Notifications notifications={notifications} onMarkRead={() => {}} />
       )}
 
       {tab === "profile" && (
         <Profile
           isEdit
           initialData={profile}
-          onSave={(p) => setProfile(p)}
+          onSave={handleProfileSave}
+          loading={loading}
         />
       )}
 

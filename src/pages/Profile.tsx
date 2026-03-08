@@ -5,9 +5,10 @@ interface ProfileProps {
   onSave: (profile: { nickname: string; bio: string; avatar: string }) => void;
   isEdit?: boolean;
   initialData?: { nickname: string; bio: string; avatar: string };
+  loading?: boolean;
 }
 
-export default function Profile({ onSave, isEdit = false, initialData }: ProfileProps) {
+export default function Profile({ onSave, isEdit = false, initialData, loading = false }: ProfileProps) {
   const [nickname, setNickname] = useState(initialData?.nickname || "");
   const [bio, setBio] = useState(initialData?.bio || "");
   const [avatar, setAvatar] = useState<string>(initialData?.avatar || "");
@@ -140,10 +141,11 @@ export default function Profile({ onSave, isEdit = false, initialData }: Profile
 
         <button
           type="submit"
-          className="w-full h-12 rounded-xl font-body font-semibold text-sm tracking-wide transition-all duration-200 hover:opacity-90 shadow-md"
+          disabled={loading}
+          className="w-full h-12 rounded-xl font-body font-semibold text-sm tracking-wide transition-all duration-200 hover:opacity-90 shadow-md disabled:opacity-60"
           style={{ background: "linear-gradient(135deg, hsl(345,65%,18%) 0%, hsl(345,55%,28%) 100%)", color: "hsl(36,60%,94%)" }}
         >
-          {isEdit ? "Сохранить изменения" : "Продолжить"}
+          {loading ? "Сохранение..." : isEdit ? "Сохранить изменения" : "Продолжить"}
         </button>
       </form>
     </div>

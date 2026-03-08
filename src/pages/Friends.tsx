@@ -1,30 +1,36 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Friend } from "@/types";
+import { friendsApi, SearchResult } from "@/lib/api";
 
 interface FriendsProps {
   friends: Friend[];
-  onAddFriend: (nickname: string) => void;
+  onAddFriend: (friendId: string) => void;
   onViewProfile: (friend: Friend) => void;
   onRemoveFriend: (id: string) => void;
 }
 
 export default function Friends({ friends, onAddFriend, onViewProfile, onRemoveFriend }: FriendsProps) {
   const [search, setSearch] = useState("");
-  const [searchResult, setSearchResult] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
 
-  const handleSearch = () => {
-    if (search.trim()) {
-      setSearchResult(search.trim());
+  const handleSearch = async () => {
+    if (!search.trim()) return;
+    setSearching(true);
+    try {
+      const results = await friendsApi.search(search.trim());
+      setSearchResults(results);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
     }
   };
 
-  const handleAdd = () => {
-    if (searchResult) {
-      onAddFriend(searchResult);
-      setSearch("");
-      setSearchResult(null);
-    }
+  const handleAdd = (result: SearchResult) => {
+    onAddFriend(result.id);
+    setSearchResults(prev => prev.map(r => r.id === result.id ? { ...r, is_friend: true } : r));
   };
 
   return (
@@ -68,27 +74,38 @@ export default function Friends({ friends, onAddFriend, onViewProfile, onRemoveF
             </button>
           </div>
 
-          {searchResult && (
-            <div className="mt-3 p-4 rounded-xl flex items-center justify-between animate-fade-in"
-              style={{ backgroundColor: "hsl(36,40%,95%)", border: "1px solid hsl(36,20%,85%)" }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: "hsl(36,40%,88%)" }}>
-                  <Icon name="User" size={18} className="text-muted-foreground" />
+          {searching && (
+            <p className="mt-3 text-center font-body text-xs text-muted-foreground">Ищем...</p>
+          )}
+          {searchResults.length > 0 && (
+            <div className="mt-3 space-y-2 animate-fade-in">
+              {searchResults.map(r => (
+                <div key={r.id} className="p-3 rounded-xl flex items-center justify-between"
+                  style={{ backgroundColor: "hsl(36,40%,95%)", border: "1px solid hsl(36,20%,85%)" }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: "hsl(36,40%,88%)" }}>
+                      <Icon name="User" size={18} className="text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-body text-sm font-medium" style={{ color: "hsl(345,65%,18%)" }}>@{r.nickname}</p>
+                      <p className="font-body text-xs text-muted-foreground">{r.tastingsCount} дегустаций</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleAdd(r)}
+                    disabled={r.is_friend}
+                    className="px-3 py-1.5 rounded-lg font-body text-xs font-medium transition-all disabled:opacity-50"
+                    style={{ backgroundColor: r.is_friend ? "hsl(36,40%,88%)" : "hsl(345,55%,28%)", color: r.is_friend ? "hsl(345,55%,28%)" : "hsl(36,60%,94%)" }}
+                  >
+                    {r.is_friend ? "Уже друг" : "Добавить"}
+                  </button>
                 </div>
-                <div>
-                  <p className="font-body text-sm font-medium" style={{ color: "hsl(345,65%,18%)" }}>@{searchResult}</p>
-                  <p className="font-body text-xs text-muted-foreground">Найден</p>
-                </div>
-              </div>
-              <button
-                onClick={handleAdd}
-                className="px-3 py-1.5 rounded-lg font-body text-xs font-medium transition-all"
-                style={{ backgroundColor: "hsl(345,55%,28%)", color: "hsl(36,60%,94%)" }}
-              >
-                Добавить
-              </button>
+              ))}
             </div>
+          )}
+          {!searching && searchResults.length === 0 && search.trim() && (
+            <p className="mt-3 text-center font-body text-xs text-muted-foreground">Никого не найдено</p>
           )}
         </div>
 

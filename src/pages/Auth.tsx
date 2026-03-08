@@ -1,8 +1,9 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
+import { auth } from "@/lib/api";
 
 interface AuthProps {
-  onAuth: () => void;
+  onAuth: (data?: { nickname: string; bio: string; avatar: string }) => void;
 }
 
 export default function Auth({ onAuth }: AuthProps) {
@@ -10,10 +11,29 @@ export default function Auth({ onAuth }: AuthProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onAuth();
+    setError("");
+    setLoading(true);
+    try {
+      if (mode === "register") {
+        if (!nickname.trim()) { setError("Введите никнейм"); setLoading(false); return; }
+        if (password !== confirmPassword) { setError("Пароли не совпадают"); setLoading(false); return; }
+        await auth.register(email, password, nickname.trim());
+        onAuth();
+      } else {
+        const data = await auth.login(email, password);
+        onAuth({ nickname: data.nickname, bio: data.bio, avatar: data.avatar });
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Ошибка входа");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -67,6 +87,25 @@ export default function Auth({ onAuth }: AuthProps) {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === "register" && (
+              <div className="animate-fade-in">
+                <label className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase mb-1.5 block">
+                  Никнейм
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder="sommelier_pro"
+                    className="w-full h-11 px-4 pl-10 bg-muted border border-border rounded-xl font-body text-sm focus:border-wine transition-colors"
+                    required
+                  />
+                  <Icon name="User" size={15} className="absolute left-3 top-3.5 text-muted-foreground" />
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase mb-1.5 block">
                 Электронная почта
@@ -78,7 +117,6 @@ export default function Auth({ onAuth }: AuthProps) {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="wine@example.com"
                   className="w-full h-11 px-4 pl-10 bg-muted border border-border rounded-xl font-body text-sm focus:border-wine transition-colors"
-                  style={{ "--tw-ring-color": "hsl(345, 55%, 28%)" } as React.CSSProperties}
                   required
                 />
                 <Icon name="Mail" size={15} className="absolute left-3 top-3.5 text-muted-foreground" />
@@ -121,12 +159,19 @@ export default function Auth({ onAuth }: AuthProps) {
               </div>
             )}
 
+            {error && (
+              <div className="px-3 py-2 rounded-lg font-body text-xs text-red-700 bg-red-50 border border-red-200">
+                {error}
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full h-12 rounded-xl font-body font-semibold text-sm tracking-wide transition-all duration-200 hover:opacity-90 active:scale-98 shadow-md mt-2"
+              disabled={loading}
+              className="w-full h-12 rounded-xl font-body font-semibold text-sm tracking-wide transition-all duration-200 hover:opacity-90 active:scale-98 shadow-md mt-2 disabled:opacity-60"
               style={{ background: "linear-gradient(135deg, hsl(345,65%,18%) 0%, hsl(345,55%,28%) 100%)", color: "hsl(36,60%,94%)" }}
             >
-              {mode === "register" ? "Создать аккаунт" : "Войти"}
+              {loading ? "Загрузка..." : mode === "register" ? "Создать аккаунт" : "Войти"}
             </button>
 
             {mode === "login" && (
