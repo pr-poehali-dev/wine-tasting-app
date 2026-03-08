@@ -26,8 +26,9 @@ def handler(event: dict, context) -> dict:
     session_id = headers.get("x-session-id") or headers.get("X-Session-Id", "")
     params = event.get("queryStringParameters") or {}
     action = params.get("action", "")
-    conn = get_conn()
+    conn = None
     try:
+        conn = get_conn()
         user_id = None
         if session_id:
             r = qone(conn, f"SELECT user_id FROM {SCHEMA}.sessions WHERE id=%s", (session_id,))
@@ -71,4 +72,5 @@ def handler(event: dict, context) -> dict:
         print("TASTINGS ERROR:", traceback.format_exc())
         return {"statusCode": 500, "headers": CORS, "body": json.dumps({"error": str(e)})}
     finally:
-        conn.close()
+        if conn:
+            conn.close()

@@ -249,6 +249,13 @@ export default function Index() {
           initialData={profile}
           onSave={handleProfileSave}
           loading={loading}
+          onLogout={() => {
+            auth.logout();
+            setMyTastings([]);
+            setMyFriends([]);
+            setProfile({ nickname: "", bio: "", avatar: "" });
+            setScreen("auth");
+          }}
         />
       )}
 

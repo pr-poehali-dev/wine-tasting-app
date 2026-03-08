@@ -14,15 +14,22 @@ export default function Friends({ friends, onAddFriend, onViewProfile, onRemoveF
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [searched, setSearched] = useState(false);
 
   const handleSearch = async () => {
     if (!search.trim()) return;
     setSearching(true);
+    setSearchError("");
+    setSearched(false);
     try {
       const results = await friendsApi.search(search.trim());
       setSearchResults(results);
-    } catch {
+      setSearched(true);
+    } catch (e: unknown) {
       setSearchResults([]);
+      setSearchError(e instanceof Error ? e.message : "Ошибка поиска");
+      setSearched(true);
     } finally {
       setSearching(false);
     }
@@ -104,8 +111,11 @@ export default function Friends({ friends, onAddFriend, onViewProfile, onRemoveF
               ))}
             </div>
           )}
-          {!searching && searchResults.length === 0 && search.trim() && (
+          {!searching && searched && searchResults.length === 0 && !searchError && (
             <p className="mt-3 text-center font-body text-xs text-muted-foreground">Никого не найдено</p>
+          )}
+          {searchError && (
+            <p className="mt-3 text-center font-body text-xs" style={{ color: "hsl(0,60%,50%)" }}>{searchError}</p>
           )}
         </div>
 

@@ -3,12 +3,13 @@ import Icon from "@/components/ui/icon";
 
 interface ProfileProps {
   onSave: (profile: { nickname: string; bio: string; avatar: string }) => void;
+  onLogout?: () => void;
   isEdit?: boolean;
   initialData?: { nickname: string; bio: string; avatar: string };
   loading?: boolean;
 }
 
-export default function Profile({ onSave, isEdit = false, initialData, loading = false }: ProfileProps) {
+export default function Profile({ onSave, onLogout, isEdit = false, initialData, loading = false }: ProfileProps) {
   const [nickname, setNickname] = useState(initialData?.nickname || "");
   const [bio, setBio] = useState(initialData?.bio || "");
   const [avatar, setAvatar] = useState<string>(initialData?.avatar || "");
@@ -147,6 +148,18 @@ export default function Profile({ onSave, isEdit = false, initialData, loading =
         >
           {loading ? "Сохранение..." : isEdit ? "Сохранить изменения" : "Продолжить"}
         </button>
+
+        {isEdit && onLogout && (
+          <button
+            type="button"
+            onClick={onLogout}
+            className="w-full h-11 rounded-xl font-body font-medium text-sm tracking-wide transition-all duration-200 hover:opacity-80 flex items-center justify-center gap-2"
+            style={{ border: "1px solid hsl(0,60%,75%)", color: "hsl(0,60%,45%)", backgroundColor: "hsl(0,60%,97%)" }}
+          >
+            <Icon name="LogOut" size={15} />
+            Выйти из аккаунта
+          </button>
+        )}
       </form>
     </div>
   );
