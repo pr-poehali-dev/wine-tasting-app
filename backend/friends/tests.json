@@ -1,12 +1,1 @@
-{
-  "tests": [
-    {
-      "name": "Health check",
-      "method": "GET",
-      "path": "/",
-      "expectedStatus": 401,
-      "expectedBody": {"error": "string"},
-      "bodyMatcher": "partial"
-    }
-  ]
-}
+{"tests": [{"name": "Health", "method": "GET", "path": "/", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}]}
