@@ -227,6 +227,7 @@ export default function Index() {
             if (t) { setSelectedTasting(t); setScreen("tasting-detail"); }
           }}
           userProfile={profile}
+          onRefresh={loadTastings}
         />
       )}
 
@@ -236,6 +237,7 @@ export default function Index() {
           onAddFriend={handleAddFriend}
           onViewProfile={(f) => { setSelectedFriend(f); setScreen("public-profile"); }}
           onRemoveFriend={handleRemoveFriend}
+          onRefresh={loadFriends}
         />
       )}
 

@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { TastingCard as TastingCardType } from "@/types";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 interface TastingsProps {
   tastings: TastingCardType[];
   onNew: () => void;
   onView: (id: string) => void;
   userProfile: { nickname: string; avatar: string };
+  onRefresh?: () => Promise<void>;
 }
 
 const WINE_STYLE_COLORS: Record<string, string> = {
@@ -18,9 +20,11 @@ const WINE_STYLE_COLORS: Record<string, string> = {
   "Десертное": "hsl(30, 65%, 35%)",
 };
 
-export default function Tastings({ tastings, onNew, onView, userProfile }: TastingsProps) {
+export default function Tastings({ tastings, onNew, onView, userProfile, onRefresh }: TastingsProps) {
   const [filter, setFilter] = useState<string>("Все");
   const styles = ["Все", "Красное", "Белое", "Розовое", "Игристое", "Оранжевое", "Десертное"];
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { refreshing, pullY } = usePullToRefresh(onRefresh || (() => {}), containerRef as React.RefObject<HTMLElement>);
 
   const filtered = filter === "Все" ? tastings : tastings.filter(t => t.style === filter);
 
@@ -29,7 +33,15 @@ export default function Tastings({ tastings, onNew, onView, userProfile }: Tasti
     : "—";
 
   return (
-    <div className="min-h-screen parchment-bg pb-6" style={{ paddingTop: "56px" }}>
+    <div ref={containerRef} className="min-h-screen parchment-bg pb-6 overflow-y-auto" style={{ paddingTop: "56px" }}>
+      {/* Pull indicator */}
+      {(pullY > 0 || refreshing) && (
+        <div className="flex justify-center items-center transition-all duration-200"
+          style={{ height: refreshing ? 48 : pullY, overflow: "hidden" }}>
+          <div className={`w-7 h-7 rounded-full border-2 border-t-transparent ${refreshing ? "animate-spin" : ""}`}
+            style={{ borderColor: "hsl(345,55%,28%)", borderTopColor: "transparent" }} />
+        </div>
+      )}
       {/* Header */}
       <div className="wine-gradient pt-5 pb-20 px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10"

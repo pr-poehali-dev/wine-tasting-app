@@ -1,21 +1,25 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { Friend } from "@/types";
 import { friendsApi, SearchResult } from "@/lib/api";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 interface FriendsProps {
   friends: Friend[];
   onAddFriend: (friendId: string) => void;
   onViewProfile: (friend: Friend) => void;
   onRemoveFriend: (id: string) => void;
+  onRefresh?: () => Promise<void>;
 }
 
-export default function Friends({ friends, onAddFriend, onViewProfile, onRemoveFriend }: FriendsProps) {
+export default function Friends({ friends, onAddFriend, onViewProfile, onRemoveFriend, onRefresh }: FriendsProps) {
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { refreshing, pullY } = usePullToRefresh(onRefresh || (() => {}), containerRef as React.RefObject<HTMLElement>);
 
   const handleSearch = async () => {
     if (!search.trim()) return;
@@ -41,7 +45,15 @@ export default function Friends({ friends, onAddFriend, onViewProfile, onRemoveF
   };
 
   return (
-    <div className="min-h-screen parchment-bg pb-6" style={{ paddingTop: "56px" }}>
+    <div ref={containerRef} className="min-h-screen parchment-bg pb-6 overflow-y-auto" style={{ paddingTop: "56px" }}>
+      {/* Pull indicator */}
+      {(pullY > 0 || refreshing) && (
+        <div className="flex justify-center items-center transition-all duration-200"
+          style={{ height: refreshing ? 48 : pullY, overflow: "hidden" }}>
+          <div className={`w-7 h-7 rounded-full border-2 border-t-transparent ${refreshing ? "animate-spin" : ""}`}
+            style={{ borderColor: "hsl(345,55%,28%)", borderTopColor: "transparent" }} />
+        </div>
+      )}
       {/* Header */}
       <div className="wine-gradient pt-5 pb-8 px-6 relative overflow-hidden">
         <div className="relative z-10 animate-slide-up">
