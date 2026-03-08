@@ -1,5 +1,6 @@
 """
 Аутентификация: регистрация, вход, выход, получение текущего пользователя.
+Роутинг через query-параметр ?action=register|login|me|profile
 """
 import json
 import os
@@ -29,16 +30,17 @@ def handler(event: dict, context) -> dict:
         return {"statusCode": 200, "headers": CORS, "body": ""}
 
     method = event.get("httpMethod", "GET")
-    path = event.get("path", "/")
     headers = event.get("headers", {}) or {}
     session_id = headers.get("x-session-id") or headers.get("X-Session-Id", "")
+    params = event.get("queryStringParameters") or {}
+    action = params.get("action", "")
 
     conn = get_conn()
     cur = conn.cursor()
 
     try:
-        # POST /register
-        if method == "POST" and path.endswith("/register"):
+        # POST ?action=register
+        if method == "POST" and action == "register":
             body = json.loads(event.get("body") or "{}")
             email = body.get("email", "").strip().lower()
             password = body.get("password", "")
@@ -68,8 +70,8 @@ def handler(event: dict, context) -> dict:
                 "body": json.dumps({"session_id": token, "user_id": user_id, "nickname": nickname})
             }
 
-        # POST /login
-        if method == "POST" and path.endswith("/login"):
+        # POST ?action=login
+        if method == "POST" and action == "login":
             body = json.loads(event.get("body") or "{}")
             email = body.get("email", "").strip().lower()
             password = body.get("password", "")
@@ -91,11 +93,11 @@ def handler(event: dict, context) -> dict:
             return {
                 "statusCode": 200,
                 "headers": CORS,
-                "body": json.dumps({"session_id": token, "user_id": user_id, "nickname": nickname, "bio": bio, "avatar": avatar})
+                "body": json.dumps({"session_id": token, "user_id": user_id, "nickname": nickname, "bio": bio or "", "avatar": avatar or ""})
             }
 
-        # GET /me
-        if method == "GET" and path.endswith("/me"):
+        # GET ?action=me
+        if method == "GET" and action == "me":
             if not session_id:
                 return {"statusCode": 401, "headers": CORS, "body": json.dumps({"error": "Не авторизован"})}
 
@@ -112,11 +114,11 @@ def handler(event: dict, context) -> dict:
             return {
                 "statusCode": 200,
                 "headers": CORS,
-                "body": json.dumps({"user_id": user_id, "nickname": nickname, "bio": bio, "avatar": avatar})
+                "body": json.dumps({"user_id": user_id, "nickname": nickname, "bio": bio or "", "avatar": avatar or ""})
             }
 
-        # PUT /profile
-        if method == "PUT" and path.endswith("/profile"):
+        # PUT ?action=profile
+        if method == "PUT" and action == "profile":
             if not session_id:
                 return {"statusCode": 401, "headers": CORS, "body": json.dumps({"error": "Не авторизован"})}
 

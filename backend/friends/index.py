@@ -1,5 +1,6 @@
 """
-Друзья: поиск пользователей, добавление/удаление, список друзей с дегустациями.
+Друзья: поиск, добавление/удаление, список с дегустациями.
+Роутинг через ?action=list|search|add|remove
 """
 import json
 import os
@@ -29,10 +30,10 @@ def handler(event: dict, context) -> dict:
         return {"statusCode": 200, "headers": CORS, "body": ""}
 
     method = event.get("httpMethod", "GET")
-    path = event.get("path", "/")
     headers = event.get("headers", {}) or {}
     session_id = headers.get("x-session-id") or headers.get("X-Session-Id", "")
     params = event.get("queryStringParameters") or {}
+    action = params.get("action", "")
 
     conn = get_conn()
     cur = conn.cursor()
@@ -43,8 +44,8 @@ def handler(event: dict, context) -> dict:
         if not user_id:
             return {"statusCode": 401, "headers": CORS, "body": json.dumps({"error": "Не авторизован"})}
 
-        # GET /friends — список друзей
-        if method == "GET" and (path.endswith("/friends") or path.endswith("/friends/")):
+        # GET ?action=list
+        if method == "GET" and action == "list":
             cur.execute(
                 f"SELECT u.id, u.nickname, u.bio, u.avatar FROM {SCHEMA}.users u "
                 f"JOIN {SCHEMA}.friendships f ON f.friend_id = u.id "
@@ -58,7 +59,6 @@ def handler(event: dict, context) -> dict:
                 count = cur.fetchone()[0]
                 cur.execute(f"SELECT AVG(rating) FROM {SCHEMA}.tastings WHERE user_id=%s", (fid,))
                 avg = cur.fetchone()[0]
-                # Last 5 tastings
                 cur.execute(
                     f"SELECT t.id, t.name, t.year, t.country, t.region, t.style, t.tasting_date, t.rating, t.photo, "
                     f"t.color, t.density, t.aroma_intensity, t.primary_aromas, t.impression "
@@ -72,33 +72,33 @@ def handler(event: dict, context) -> dict:
                     tastings.append({
                         "id": str(tr[0]),
                         "name": tr[1],
-                        "year": tr[2],
-                        "country": tr[3],
-                        "region": tr[4],
+                        "year": tr[2] or "",
+                        "country": tr[3] or "",
+                        "region": tr[4] or "",
                         "style": tr[5],
-                        "date": tr[6],
+                        "date": tr[6] or "",
                         "rating": tr[7],
-                        "photo": tr[8],
-                        "color": tr[9],
-                        "density": tr[10],
-                        "aromaIntensity": tr[11],
-                        "primaryAromas": tr[12],
-                        "impression": tr[13],
+                        "photo": tr[8] or "",
+                        "color": tr[9] or "",
+                        "density": tr[10] or "",
+                        "aromaIntensity": tr[11] or 0,
+                        "primaryAromas": tr[12] or "",
+                        "impression": tr[13] or "",
                         "likes": likes,
                     })
                 friends.append({
                     "id": str(fid),
                     "nickname": nickname,
-                    "bio": bio,
-                    "avatar": avatar,
+                    "bio": bio or "",
+                    "avatar": avatar or "",
                     "tastingsCount": count,
                     "avgRating": round(float(avg), 1) if avg else 0,
                     "tastings": tastings,
                 })
             return {"statusCode": 200, "headers": CORS, "body": json.dumps(friends)}
 
-        # GET /friends/search?nickname=...
-        if method == "GET" and "/search" in path:
+        # GET ?action=search&nickname=...
+        if method == "GET" and action == "search":
             nickname = params.get("nickname", "").strip()
             if not nickname:
                 return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "Укажите никнейм"})}
@@ -118,15 +118,15 @@ def handler(event: dict, context) -> dict:
                 results.append({
                     "id": str(fid),
                     "nickname": nick,
-                    "bio": bio,
-                    "avatar": avatar,
+                    "bio": bio or "",
+                    "avatar": avatar or "",
                     "tastingsCount": count,
                     "is_friend": is_friend,
                 })
             return {"statusCode": 200, "headers": CORS, "body": json.dumps(results)}
 
-        # POST /friends/add — добавить друга
-        if method == "POST" and "/add" in path:
+        # POST ?action=add
+        if method == "POST" and action == "add":
             body = json.loads(event.get("body") or "{}")
             friend_id = int(body.get("friend_id", 0))
             if not friend_id:
@@ -139,8 +139,8 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True})}
 
-        # POST /friends/remove — удалить друга (помечаем нулём через join-удаление id)
-        if method == "POST" and "/remove" in path:
+        # POST ?action=remove
+        if method == "POST" and action == "remove":
             body = json.loads(event.get("body") or "{}")
             friend_id = int(body.get("friend_id", 0))
             cur.execute(
@@ -148,7 +148,7 @@ def handler(event: dict, context) -> dict:
                 (user_id, friend_id)
             )
             conn.commit()
-            return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True, "removed": friend_id})}
+            return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True})}
 
         return {"statusCode": 404, "headers": CORS, "body": json.dumps({"error": "Not found"})}
 

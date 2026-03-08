@@ -1,4 +1,4 @@
-const URLS = {
+const BASE = {
   auth: "https://functions.poehali.dev/cd14de3a-8c21-46cf-a1aa-7a00f45fe9e5",
   tastings: "https://functions.poehali.dev/ccc69939-31c9-4e74-9fc9-ff205a619f24",
   friends: "https://functions.poehali.dev/bae1bbd6-db33-433a-b6d5-69125d0aa998",
@@ -35,7 +35,7 @@ async function req<T>(url: string, options?: RequestInit): Promise<T> {
 export const auth = {
   register: async (email: string, password: string, nickname: string) => {
     const data = await req<{ session_id: string; user_id: number; nickname: string }>(
-      `${URLS.auth}/register`,
+      `${BASE.auth}?action=register`,
       { method: "POST", body: JSON.stringify({ email, password, nickname }) }
     );
     saveSession(data.session_id);
@@ -46,7 +46,7 @@ export const auth = {
 
   login: async (email: string, password: string) => {
     const data = await req<{ session_id: string; user_id: number; nickname: string; bio: string; avatar: string }>(
-      `${URLS.auth}/login`,
+      `${BASE.auth}?action=login`,
       { method: "POST", body: JSON.stringify({ email, password }) }
     );
     saveSession(data.session_id);
@@ -57,12 +57,12 @@ export const auth = {
 
   me: async () => {
     return req<{ user_id: number; nickname: string; bio: string; avatar: string }>(
-      `${URLS.auth}/me`
+      `${BASE.auth}?action=me`
     );
   },
 
   updateProfile: async (nickname: string, bio: string, avatar: string) => {
-    return req<{ ok: boolean }>(`${URLS.auth}/profile`, {
+    return req<{ ok: boolean }>(`${BASE.auth}?action=profile`, {
       method: "PUT",
       body: JSON.stringify({ nickname, bio, avatar }),
     });
@@ -77,43 +77,44 @@ export const auth = {
 // Tastings
 export const tastings = {
   list: async (userId?: string) => {
-    const qs = userId ? `?user_id=${userId}` : "";
-    return req<TastingApiRow[]>(`${URLS.tastings}/tastings${qs}`);
+    const qs = userId ? `&user_id=${userId}` : "";
+    return req<TastingApiRow[]>(`${BASE.tastings}?action=list${qs}`);
   },
 
   create: async (card: TastingPayload) => {
-    return req<{ id: string }>(`${URLS.tastings}/tastings`, {
+    return req<{ id: string }>(`${BASE.tastings}?action=create`, {
       method: "POST",
       body: JSON.stringify(card),
     });
   },
 
   like: async (tastingId: string) => {
-    return req<{ liked: boolean; likes: number }>(`${URLS.tastings}/like/${tastingId}`, {
-      method: "POST",
-    });
+    return req<{ liked: boolean; likes: number }>(
+      `${BASE.tastings}?action=like&tasting_id=${tastingId}`,
+      { method: "POST" }
+    );
   },
 };
 
 // Friends
 export const friendsApi = {
   list: async () => {
-    return req<FriendApiRow[]>(`${URLS.friends}/friends`);
+    return req<FriendApiRow[]>(`${BASE.friends}?action=list`);
   },
 
   search: async (nickname: string) => {
-    return req<SearchResult[]>(`${URLS.friends}/friends/search?nickname=${encodeURIComponent(nickname)}`);
+    return req<SearchResult[]>(`${BASE.friends}?action=search&nickname=${encodeURIComponent(nickname)}`);
   },
 
   add: async (friendId: string) => {
-    return req<{ ok: boolean }>(`${URLS.friends}/friends/add`, {
+    return req<{ ok: boolean }>(`${BASE.friends}?action=add`, {
       method: "POST",
       body: JSON.stringify({ friend_id: parseInt(friendId) }),
     });
   },
 
   remove: async (friendId: string) => {
-    return req<{ ok: boolean }>(`${URLS.friends}/friends/remove`, {
+    return req<{ ok: boolean }>(`${BASE.friends}?action=remove`, {
       method: "POST",
       body: JSON.stringify({ friend_id: parseInt(friendId) }),
     });
