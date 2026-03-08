@@ -4,89 +4,54 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 36 25% 97%;
+    --foreground: 345 30% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 345 30% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 345 30% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 345 55% 28%;
+    --primary-foreground: 36 60% 94%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 36 40% 92%;
+    --secondary-foreground: 345 30% 20%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 36 20% 94%;
+    --muted-foreground: 345 15% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 42 75% 50%;
+    --accent-foreground: 345 30% 12%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 36 20% 85%;
+    --input: 36 20% 88%;
+    --ring: 345 55% 28%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Custom wine palette */
+    --wine: 345 55% 28%;
+    --wine-light: 345 40% 40%;
+    --wine-dark: 345 65% 18%;
+    --gold: 42 75% 50%;
+    --gold-light: 42 90% 70%;
+    --cream: 36 60% 94%;
+    --cream-dark: 36 30% 88%;
+    --parchment: 36 25% 97%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 345 40% 20%;
+    --sidebar-foreground: 36 60% 90%;
+    --sidebar-primary: 42 75% 50%;
+    --sidebar-primary-foreground: 345 30% 12%;
+    --sidebar-accent: 345 45% 25%;
+    --sidebar-accent-foreground: 36 60% 90%;
+    --sidebar-border: 345 40% 28%;
+    --sidebar-ring: 42 75% 50%;
   }
 }
 
@@ -97,5 +62,213 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: "Montserrat", sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-family: "Cormorant Garamond", serif;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: "Cormorant Garamond", serif;
+  }
+
+  .font-body {
+    font-family: "Montserrat", sans-serif;
+  }
+
+  .wine-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(345, 65%, 18%) 0%,
+      hsl(345, 55%, 28%) 50%,
+      hsl(345, 40%, 35%) 100%
+    );
+  }
+
+  .gold-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(42, 60%, 40%) 0%,
+      hsl(42, 75%, 52%) 50%,
+      hsl(42, 90%, 65%) 100%
+    );
+  }
+
+  .parchment-bg {
+    background: linear-gradient(
+      160deg,
+      hsl(36, 40%, 97%) 0%,
+      hsl(36, 30%, 93%) 100%
+    );
+  }
+
+  .card-wine {
+    background: white;
+    border: 1px solid hsl(36, 20%, 85%);
+    box-shadow: 0 2px 20px rgba(100, 20, 35, 0.06);
+  }
+
+  .text-wine {
+    color: hsl(var(--wine));
+  }
+
+  .text-gold {
+    color: hsl(var(--gold));
+  }
+
+  .bg-wine {
+    background-color: hsl(var(--wine));
+  }
+
+  .bg-gold {
+    background-color: hsl(var(--gold));
+  }
+
+  .border-wine {
+    border-color: hsl(var(--wine));
+  }
+
+  .border-gold {
+    border-color: hsl(var(--gold));
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .hover-lift {
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(100, 20, 35, 0.15);
+  }
+
+  .divider-gold {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(42, 75%, 50%),
+      transparent
+    );
+  }
+
+  .star-rating .star {
+    cursor: pointer;
+    transition:
+      transform 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .star-rating .star:hover {
+    transform: scale(1.2);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(36, 25%, 97%);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(345, 40%, 60%);
+    border-radius: 2px;
+  }
+
+  /* Input focus */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(345, 55%, 28%, 0.2);
+  }
+
+  /* Decorative wine drop */
+  .wine-drop {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .wine-drop::before {
+    content: "";
+    position: absolute;
+    top: -30%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(
+      circle,
+      hsl(345, 55%, 28%, 0.12) 0%,
+      transparent 70%
+    );
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .wine-drop::after {
+    content: "";
+    position: absolute;
+    bottom: -20%;
+    left: -10%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(
+      circle,
+      hsl(42, 75%, 50%, 0.08) 0%,
+      transparent 70%
+    );
+    border-radius: 50%;
+    pointer-events: none;
   }
 }
