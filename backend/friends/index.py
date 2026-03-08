@@ -19,12 +19,6 @@ def get_conn():
     return psycopg2.connect(os.environ["DATABASE_URL"])
 
 
-def get_user_id(cur, session_id: str):
-    cur.execute(f"SELECT user_id FROM {SCHEMA}.sessions WHERE id=%s", (session_id,))
-    row = cur.fetchone()
-    return row[0] if row else None
-
-
 def handler(event: dict, context) -> dict:
     if event.get("httpMethod") == "OPTIONS":
         return {"statusCode": 200, "headers": CORS, "body": ""}
@@ -36,39 +30,52 @@ def handler(event: dict, context) -> dict:
     action = params.get("action", "")
 
     conn = get_conn()
-    cur = conn.cursor()
 
     try:
-        user_id = get_user_id(cur, session_id) if session_id else None
+        # Каждый запрос — свой курсор, чтобы не конфликтовать
+        with conn.cursor() as c:
+            c.execute(f"SELECT user_id FROM {SCHEMA}.sessions WHERE id=%s", (session_id,))
+            row = c.fetchone()
+            user_id = row[0] if row else None
 
         if not user_id:
             return {"statusCode": 401, "headers": CORS, "body": json.dumps({"error": "Не авторизован"})}
 
         # GET ?action=list
         if method == "GET" and action == "list":
-            cur.execute(
-                f"SELECT u.id, u.nickname, u.bio, u.avatar FROM {SCHEMA}.users u "
-                f"JOIN {SCHEMA}.friendships f ON f.friend_id = u.id "
-                f"WHERE f.user_id = %s ORDER BY f.created_at DESC",
-                (user_id,)
-            )
-            friends = []
-            for row in cur.fetchall():
-                fid, nickname, bio, avatar = row
-                cur.execute(f"SELECT COUNT(*) FROM {SCHEMA}.tastings WHERE user_id=%s", (fid,))
-                count = cur.fetchone()[0]
-                cur.execute(f"SELECT AVG(rating) FROM {SCHEMA}.tastings WHERE user_id=%s", (fid,))
-                avg = cur.fetchone()[0]
-                cur.execute(
-                    f"SELECT t.id, t.name, t.year, t.country, t.region, t.style, t.tasting_date, t.rating, t.photo, "
-                    f"t.color, t.density, t.aroma_intensity, t.primary_aromas, t.impression "
-                    f"FROM {SCHEMA}.tastings t WHERE t.user_id=%s ORDER BY t.created_at DESC LIMIT 5",
-                    (fid,)
+            with conn.cursor() as c:
+                c.execute(
+                    f"SELECT u.id, u.nickname, u.bio, u.avatar FROM {SCHEMA}.users u "
+                    f"JOIN {SCHEMA}.friendships f ON f.friend_id = u.id "
+                    f"WHERE f.user_id = %s ORDER BY f.created_at DESC",
+                    (user_id,)
                 )
+                friend_rows = c.fetchall()
+
+            friends = []
+            for row in friend_rows:
+                fid, nickname, bio, avatar = row
+
+                with conn.cursor() as c2:
+                    c2.execute(f"SELECT COUNT(*), AVG(rating) FROM {SCHEMA}.tastings WHERE user_id=%s", (fid,))
+                    cnt_row = c2.fetchone()
+                    count = cnt_row[0]
+                    avg = cnt_row[1]
+
+                with conn.cursor() as c3:
+                    c3.execute(
+                        f"SELECT t.id, t.name, t.year, t.country, t.region, t.style, t.tasting_date, t.rating, t.photo, "
+                        f"t.color, t.density, t.aroma_intensity, t.primary_aromas, t.impression "
+                        f"FROM {SCHEMA}.tastings t WHERE t.user_id=%s ORDER BY t.created_at DESC LIMIT 5",
+                        (fid,)
+                    )
+                    tasting_rows = c3.fetchall()
+
                 tastings = []
-                for tr in cur.fetchall():
-                    cur.execute(f"SELECT COUNT(*) FROM {SCHEMA}.likes WHERE tasting_id=%s", (tr[0],))
-                    likes = cur.fetchone()[0]
+                for tr in tasting_rows:
+                    with conn.cursor() as c4:
+                        c4.execute(f"SELECT COUNT(*) FROM {SCHEMA}.likes WHERE tasting_id=%s", (tr[0],))
+                        likes = c4.fetchone()[0]
                     tastings.append({
                         "id": str(tr[0]),
                         "name": tr[1],
@@ -86,6 +93,7 @@ def handler(event: dict, context) -> dict:
                         "impression": tr[13] or "",
                         "likes": likes,
                     })
+
                 friends.append({
                     "id": str(fid),
                     "nickname": nickname,
@@ -103,18 +111,23 @@ def handler(event: dict, context) -> dict:
             if not nickname:
                 return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "Укажите никнейм"})}
 
-            cur.execute(
-                f"SELECT id, nickname, bio, avatar FROM {SCHEMA}.users "
-                f"WHERE nickname ILIKE %s AND id != %s LIMIT 10",
-                (f"%{nickname}%", user_id)
-            )
+            with conn.cursor() as c:
+                c.execute(
+                    f"SELECT id, nickname, bio, avatar FROM {SCHEMA}.users "
+                    f"WHERE nickname ILIKE %s AND id != %s LIMIT 10",
+                    (f"%{nickname}%", user_id)
+                )
+                rows = c.fetchall()
+
             results = []
-            for row in cur.fetchall():
+            for row in rows:
                 fid, nick, bio, avatar = row
-                cur.execute(f"SELECT COUNT(*) FROM {SCHEMA}.tastings WHERE user_id=%s", (fid,))
-                count = cur.fetchone()[0]
-                cur.execute(f"SELECT 1 FROM {SCHEMA}.friendships WHERE user_id=%s AND friend_id=%s", (user_id, fid))
-                is_friend = cur.fetchone() is not None
+                with conn.cursor() as c2:
+                    c2.execute(f"SELECT COUNT(*) FROM {SCHEMA}.tastings WHERE user_id=%s", (fid,))
+                    count = c2.fetchone()[0]
+                with conn.cursor() as c3:
+                    c3.execute(f"SELECT 1 FROM {SCHEMA}.friendships WHERE user_id=%s AND friend_id=%s", (user_id, fid))
+                    is_friend = c3.fetchone() is not None
                 results.append({
                     "id": str(fid),
                     "nickname": nick,
@@ -132,10 +145,11 @@ def handler(event: dict, context) -> dict:
             if not friend_id:
                 return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "Укажите friend_id"})}
 
-            cur.execute(
-                f"INSERT INTO {SCHEMA}.friendships (user_id, friend_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-                (user_id, friend_id)
-            )
+            with conn.cursor() as c:
+                c.execute(
+                    f"INSERT INTO {SCHEMA}.friendships (user_id, friend_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                    (user_id, friend_id)
+                )
             conn.commit()
             return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True})}
 
@@ -143,15 +157,15 @@ def handler(event: dict, context) -> dict:
         if method == "POST" and action == "remove":
             body = json.loads(event.get("body") or "{}")
             friend_id = int(body.get("friend_id", 0))
-            cur.execute(
-                f"UPDATE {SCHEMA}.friendships SET created_at=created_at WHERE user_id=%s AND friend_id=%s AND FALSE",
-                (user_id, friend_id)
-            )
+            with conn.cursor() as c:
+                c.execute(
+                    f"UPDATE {SCHEMA}.friendships SET created_at=created_at WHERE user_id=%s AND friend_id=%s AND FALSE",
+                    (user_id, friend_id)
+                )
             conn.commit()
             return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True})}
 
         return {"statusCode": 404, "headers": CORS, "body": json.dumps({"error": "Not found"})}
 
     finally:
-        cur.close()
         conn.close()

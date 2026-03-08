@@ -29,14 +29,27 @@ export default function TastingDetail({ card, onBack, onLike, isOwn = true }: Ta
   const accentColor = STYLE_COLORS[card.style] || "hsl(345,55%,28%)";
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/tasting/${card.id}`;
+    const text = [
+      `🍷 ${card.name} ${card.year}`,
+      card.producer ? `Производитель: ${card.producer}` : "",
+      card.region ? `${card.region}, ${card.country}` : card.country,
+      `Стиль: ${card.style}`,
+      card.impression ? `"${card.impression}"` : "",
+      `Оценка: ${"★".repeat(card.rating)}${"☆".repeat(5 - card.rating)}`,
+      card.primaryAromas ? `Ароматы: ${card.primaryAromas}` : "",
+    ].filter(Boolean).join("\n");
+
     if (navigator.share) {
       try {
-        await navigator.share({ title: card.name, text: `Дегустация: ${card.name} ${card.year}`, url });
+        await navigator.share({ title: card.name, text });
       } catch (_e) { void _e; }
     } else {
-      navigator.clipboard.writeText(url);
-      alert("Ссылка скопирована!");
+      try {
+        await navigator.clipboard.writeText(text);
+        alert("Описание скопировано!");
+      } catch {
+        alert(text);
+      }
     }
   };
 
